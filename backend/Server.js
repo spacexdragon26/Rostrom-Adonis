@@ -19,7 +19,7 @@ const PORT = 5005;
 // Hardcoded responses
 const RESPONSES = {
   hello: "Hi there!",
-  "how are you": "I'm just a bot, but I'm good!",
+  wassup : "I'm just a bot, but I'm good!",
   bye: "Goodbye!",
 };
 
