@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { FaUpload } from "react-icons/fa";
@@ -16,7 +17,7 @@ const Home = () => {
 
   useEffect(() => {
     socket.on("receiveMessage", (response) => {
-      const timestamp = new Date().toLocaleTimeString();
+      const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setResponses((prev) => [...prev, { text: response, sender: "bot", timestamp }]);
     });
 
@@ -27,7 +28,7 @@ const Home = () => {
 
   const sendMessage = async () => {
     if (message.trim() !== "" || file) {
-      const timestamp = new Date().toLocaleTimeString();
+      const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       // Send text message
       if (message.trim() !== "") {
@@ -82,9 +83,10 @@ const Home = () => {
   };
 
   return (
-    <div style={{ width: "100%", height: "100vh", backgroundColor: "#1F1D1D", fontFamily: "Inter, sans-serif" }}>
+    <div style={{display: "flex", width: "100vw", height: "100vh", justifyContent: "center", alignItems: "center"}}>
+    <div style={{ width: "60%", height: "80%",backgroundColor: "#1F1D1D", fontFamily: "Inter, sans-serif", margin: 40, boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)"}}>
       {/* Chat Window Header */}
-      <div style={{ width: "100%", height: 96, backgroundColor: "#000000", boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25) inset", display: "flex", alignItems: "center", paddingLeft: 20 }}>
+      <div style={{ width: "100%", height: 96, backgroundColor: "#000000", boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25) inset", display: "flex", alignItems: "center", paddingLeft: 20}}>
         <h2 style={{ color: "white", fontSize: 20, fontWeight: "600" }}>Virtual Private Assistant</h2>
       </div>
 
@@ -119,7 +121,6 @@ const Home = () => {
           width: "100%",
           height: 100,
           backgroundColor: "#1F1D1D",
-          position: "absolute",
           bottom: 0,
           display: "flex",
           alignItems: "center",
@@ -192,7 +193,7 @@ const Home = () => {
           </button>
         </div>
       )}
-    </div>
+    </div></div>
   );
 };
 
