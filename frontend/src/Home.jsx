@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { FaUpload } from "react-icons/fa";
-import { MdSend} from "react-icons/md";
+import { MdSend } from "react-icons/md";
 import "./App.css";
 
-const socket = io("http://localhost:5005"); // Connect to backend WebSocket server
+
+const socket = io("http://localhost:5005", {
+  transports: ["websocket"], 
+});
 
 const Home = () => {
   const [message, setMessage] = useState("");
@@ -13,7 +16,8 @@ const Home = () => {
 
   useEffect(() => {
     socket.on("receiveMessage", (response) => {
-      setResponses((prev) => [...prev, { text: response, sender: "bot" }]);
+      const timestamp = new Date().toLocaleTimeString();
+      setResponses((prev) => [...prev, { text: response, sender: "bot", timestamp }]);
     });
 
     return () => {
@@ -21,11 +25,45 @@ const Home = () => {
     };
   }, []);
 
-  const sendMessage = () => {
-    if (message.trim() !== "") {
-      setResponses((prev) => [...prev, { text: message, sender: "user" }]);
-      socket.emit("sendMessage", message);
-      setMessage("");
+  const sendMessage = async () => {
+    if (message.trim() !== "" || file) {
+      const timestamp = new Date().toLocaleTimeString();
+
+      // Send text message
+      if (message.trim() !== "") {
+        setResponses((prev) => [
+          ...prev,
+          { text: message, sender: "user", timestamp },
+        ]);
+        socket.emit("sendMessage", message);
+        setMessage("");
+      }
+
+      // send file if selected
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const response = await fetch("http://localhost:5005/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            console.log("File uploaded successfully");
+            setResponses((prev) => [
+              ...prev,
+              { text: `File uploaded: ${file.name}`, sender: "bot", timestamp },
+            ]);
+            setFile(null); 
+          } else {
+            console.error("Failed to upload file");
+          }
+        } catch (error) {
+          console.error("Error uploading file:", error);
+        }
+      }
     }
   };
 
@@ -33,47 +71,127 @@ const Home = () => {
     const uploadedFile = e.target.files[0];
     if (uploadedFile) {
       setFile(uploadedFile);
-      console.log("Selected file:", uploadedFile.name);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // prevent default behavior (newline)
+      sendMessage();
     }
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="outer-container">
-        <h2 className="text-center">VPA</h2>
+    <div style={{ width: "100%", height: "100vh", backgroundColor: "#1F1D1D", fontFamily: "Inter, sans-serif" }}>
+      {/* Chat Window Header */}
+      <div style={{ width: "100%", height: 96, backgroundColor: "#000000", boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25) inset", display: "flex", alignItems: "center", paddingLeft: 20 }}>
+        <h2 style={{ color: "white", fontSize: 20, fontWeight: "600" }}>Virtual Private Assistant</h2>
+      </div>
 
-        <div className="chat-box d-flex flex-column">
-          {responses.map((msg, index) => (
-            <p
-              key={index}
-              className={`message ${msg.sender === "user" ? "user-message" : "bot-message"}`}
-            >
+      {/* Chat Messages */}
+      <div style={{ width: "100%", height: "calc(100% - 200px)", overflowY: "auto", padding: 20 }}>
+        {responses.map((msg, index) => (
+          <div
+            key={index}
+            style={{
+              backgroundColor: msg.sender === "user" ? "#5672F6" : "#312F2F",
+              borderRadius: 15,
+              padding: "8px 16px",
+              marginBottom: 10,
+              width: "fit-content",
+              maxWidth: "70%",
+              marginLeft: msg.sender === "user" ? "auto" : 0,
+            }}
+          >
+            <p style={{ color: "white", fontSize: 16, fontWeight: "600", margin: 0 }}>
               {msg.text}
             </p>
-          ))}
-        </div>
-
-        <div className="chat-input-container">
-          {/* File Upload Button */}
-          <label className="upload-button">
-            <FaUpload size={20} />
-            <input type="file" onChange={handleFileChange} hidden />
-          </label>
-
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-          />
-          <button onClick={sendMessage}><MdSend size={20} style={{alignItems: "center"}}/></button>
-          
-          
-        </div>
-
-        <div className="file-name">{file && <p style={{textAlign: "center", margin: "5px"}}>Selected file: {file.name}</p>}</div>
-        
+            <p style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 12, margin: "4px 0 0 0" }}>
+              {msg.timestamp}
+            </p>
+          </div>
+        ))}
       </div>
+
+      {/* Chat Input Section */}
+      <div
+        style={{
+          width: "100%",
+          height: 100,
+          backgroundColor: "#1F1D1D",
+          position: "absolute",
+          bottom: 0,
+          display: "flex",
+          alignItems: "center",
+          padding: "0 20px",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* File Upload Button */}
+        <label style={{ marginRight: 10, cursor: "pointer" }}>
+          <FaUpload size={20} color="white" />
+          <input type="file" onChange={handleFileChange} hidden />
+        </label>
+
+        {/* Message Input */}
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type anything..."
+          style={{
+            flex: 1,
+            height: 50,
+            backgroundColor: "#312F2F",
+            borderRadius: 30,
+            border: "none",
+            padding: "0 20px",
+            color: "white",
+            fontSize: 16,
+            fontWeight: "600",
+            marginRight: 10,
+          }}
+        />
+
+        {/* Send Button */}
+        <button
+          onClick={sendMessage}
+          style={{
+            width: 50,
+            height: 50,
+            backgroundColor: "#5672F6",
+            borderRadius: "50%",
+            border: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <MdSend size={20} color="white" />
+        </button>
+      </div>
+
+      {/* Display Selected File Name with Remove Option */}
+      {file && (
+        <div style={{ position: "absolute", bottom: 120, left: 20, color: "white", fontSize: 14, display: "flex", alignItems: "center" }}>
+          <span>Selected file: {file.name}</span>
+          <button
+            onClick={() => setFile(null)} // Clear the selected file
+            style={{
+              marginLeft: 10,
+              backgroundColor: "transparent",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            (Remove)
+          </button>
+        </div>
+      )}
     </div>
   );
 };
