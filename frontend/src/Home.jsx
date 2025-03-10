@@ -83,7 +83,7 @@ const Home = () => {
   };
 
   return (
-    <div style={{display: "flex", width: "100vw", height: "100vh", justifyContent: "center", alignItems: "center"}}>
+    <div style={{display: "flex", width: "100vw", height: "100vh", justifyContent: "center", alignItems: "center", borderRadius: "15px"}}>
     <div style={{ width: "60%", height: "80%",backgroundColor: "#1F1D1D", fontFamily: "Inter, sans-serif", margin: 40, boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)"}}>
       {/* Chat Window Header */}
       <div style={{ width: "100%", height: 96, backgroundColor: "#000000", boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25) inset", display: "flex", alignItems: "center", paddingLeft: 20}}>
